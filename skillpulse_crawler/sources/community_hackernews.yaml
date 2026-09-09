@@ -1,0 +1,23 @@
+id: community_hackernews
+section: community
+display_name: "Hacker News"
+enabled: true
+interval: weekly
+fetcher:
+  type: api
+  url: https://hn.algolia.com/api/v1/search?tags=story&numericFilters=points>=50
+extractor:
+  type: jsonpath
+  item_selector: "$.hits[*]"
+  fields:
+    title: "$.title"
+    url: "$.url"
+    comments_count: "$.num_comments"
+    likes_count: "$.points"
+mapping:
+  source: "Hacker News"
+  source_id:
+    expr: "fn:hn_id"
+limit:
+  raw: 30
+  top: 10

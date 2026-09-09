@@ -1,0 +1,24 @@
+id: project_github_trending
+section: project
+display_name: "GitHub Trending"
+enabled: true
+interval: weekly
+fetcher:
+  type: api
+  url: https://api.github.com/search/repositories?q=ai+skills&sort=stars&order=desc
+  headers:
+    Accept: application/vnd.github+json
+extractor:
+  type: jsonpath
+  item_selector: "$.items[*]"
+  fields:
+    title: "$.full_name"
+    url: "$.html_url"
+    stars: "$.stargazers_count"
+mapping:
+  source: "GitHub"
+  source_id:
+    expr: "fn:github_id"
+limit:
+  raw: 30
+  top: 10

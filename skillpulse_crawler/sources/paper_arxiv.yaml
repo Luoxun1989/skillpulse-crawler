@@ -1,0 +1,21 @@
+id: paper_arxiv
+section: paper
+display_name: "arXiv cs.AI"
+enabled: true
+interval: weekly
+fetcher:
+  type: rss
+  url: http://export.arxiv.org/rss/cs.AI
+  timeout_sec: 30
+extractor:
+  type: rss
+  fields:
+    summary: rss
+    published_date: rss
+mapping:
+  source: "arXiv"
+  source_id:
+    expr: "fn:arxiv_id_from_url"
+limit:
+  raw: 30
+  top: 10
