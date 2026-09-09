@@ -11,7 +11,7 @@ def persist_batch(items: list, issue_number: int) -> dict:
         return {"inserted": 0, "skipped_duplicate": 0, "errors": []}
     body = {
         "issueNumber": issue_number,
-        "items": [item.model_dump(mode="json") for item in items],
+        "items": [item.model_dump(mode="json", by_alias=True) for item in items],
     }
     headers = {
         "Authorization": f"Bearer {ADMIN_JWT}",

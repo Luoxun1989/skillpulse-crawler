@@ -14,11 +14,12 @@ extractor:
   fields:
     title: "$.full_name"
     url: "$.html_url"
+    source_id: "$.full_name"
     stars: "$.stargazers_count"
 mapping:
   source: "GitHub"
   source_id:
-    expr: "fn:github_id"
+    expr: "$.full_name"
 limit:
   raw: 30
   top: 10

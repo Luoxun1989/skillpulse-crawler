@@ -12,12 +12,13 @@ extractor:
   fields:
     title: "$.title"
     url: "$.url"
+    source_id: "$.objectID"
     comments_count: "$.num_comments"
     likes_count: "$.points"
 mapping:
   source: "Hacker News"
   source_id:
-    expr: "fn:hn_id"
+    expr: "$.objectID"
 limit:
   raw: 30
   top: 10

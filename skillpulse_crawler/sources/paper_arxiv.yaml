@@ -1,7 +1,7 @@
 id: paper_arxiv
 section: paper
 display_name: "arXiv cs.AI"
-enabled: true
+enabled: false  # 真实环境因网络无法访问 export.arxiv.org，保持禁用直到 mirror 方案
 interval: weekly
 fetcher:
   type: rss

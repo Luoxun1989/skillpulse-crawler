@@ -1,6 +1,15 @@
 import os
-from datetime import date as _date
 from pathlib import Path
+
+# 加载仓库根的 .env（如果存在）
+try:
+    from dotenv import load_dotenv
+    _ROOT = Path(__file__).resolve().parent.parent
+    load_dotenv(_ROOT / ".env")
+except ImportError:
+    pass
+
+from datetime import date as _date
 import click
 import httpx
 
@@ -42,7 +51,7 @@ def _row_to_item(row, source):
         summary=row.get("summary"),
         url=normalize_url(str(row.get("url", ""))),
         source=source.mapping.source,
-        source_id=str(row.get("source_id", row.get("url", ""))),
+        source_id=str(row.get("source_id") or row.get("url", "")),
         stars=int(row["stars"]) if "stars" in row and row["stars"] not in ("", None) else None,
         comments_count=int(row["comments_count"]) if "comments_count" in row and row["comments_count"] not in ("", None) else None,
         likes_count=int(row["likes_count"]) if "likes_count" in row and row["likes_count"] not in ("", None) else None,
