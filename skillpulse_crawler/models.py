@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Literal, Union
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
@@ -8,6 +8,7 @@ Section = Literal["news", "project", "paper", "community"]
 class WeeklyDigestItem(BaseModel):
     """与后端 ItemDto / WeeklyDigestItem 严格对齐字段命名
     使用 by_alias=True 序列化时输出 camelCase，匹配 Java 后端约定
+    spec 2026-09-21 §3.1：含爬虫字段 fetchStatus/fetchedAt/batchId/rawUrl/retryCount/errorMsg
     """
     model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
 
@@ -22,6 +23,14 @@ class WeeklyDigestItem(BaseModel):
     comments_count: Optional[int] = Field(default=None, alias="commentsCount")
     likes_count: Optional[int] = Field(default=None, alias="likesCount")
     published_date: Optional[date] = Field(default=None, alias="publishedDate")
+
+    # 爬虫字段（spec 2026-09-21 §3.1）
+    fetch_status: Optional[str] = Field(default="success", alias="fetchStatus")
+    fetched_at: Optional[datetime] = Field(default=None, alias="fetchedAt")
+    batch_id: Optional[str] = Field(default=None, alias="batchId")
+    raw_url: Optional[str] = Field(default=None, alias="rawUrl")
+    error_msg: Optional[str] = Field(default=None, alias="errorMsg")
+    retry_count: Optional[int] = Field(default=0, alias="retryCount")
 
     @field_validator("url")
     @classmethod
