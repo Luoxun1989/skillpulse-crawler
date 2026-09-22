@@ -1,0 +1,25 @@
+id: project_open_itc
+section: project
+display_name: "Open Github 每日榜（Open.itc.cn）"
+enabled: true
+interval: weekly
+fetcher:
+  type: http
+  url: https://open.itc.cn/github/trend/repos?trendType=0
+  headers:
+    Accept-Language: zh-CN,zh;q=0.9
+  timeout_sec: 30
+extractor:
+  type: xpath
+  item_selector: "//h5[.//a[contains(@href,'github.com/')]]"
+  fields:
+    title: ".//a[contains(@href,'github.com/')]/text()"
+    url: ".//a[contains(@href,'github.com/')]/@href"
+    source_id: ".//a[contains(@href,'github.com/')]/text()"
+mapping:
+  source: "GitHub"
+  source_id:
+    expr: ".//a[contains(@href,'github.com/')]/text()"
+limit:
+  raw: 30
+  top: 10

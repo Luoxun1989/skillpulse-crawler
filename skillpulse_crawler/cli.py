@@ -20,7 +20,7 @@ from .pipeline.dedupe import filter_new
 from .pipeline.rank import score
 from .pipeline.persist import persist_batch
 from .history import History
-from .http_client import create_client
+from .http_client import SkillPulseHTTP, PlaywrightHTTP
 from .extractor.xpath_extractor import XPathExtractor
 from .extractor.jsonpath_extractor import JSONPathExtractor
 from .extractor.regex_extractor import RegexExtractor
@@ -45,11 +45,14 @@ def _build_extractor(cfg):
 
 
 def _row_to_item(row, source):
+    url = row.get("url") or ""
+    if source.mapping.url_template and url:
+        url = source.mapping.url_template.format(**row)
     item = WeeklyDigestItem(
         section=source.section,
         title=normalize_title(str(row.get("title", ""))),
         summary=row.get("summary"),
-        url=normalize_url(str(row.get("url", ""))),
+        url=normalize_url(str(url)),
         source=source.mapping.source,
         source_id=str(row.get("source_id") or row.get("url", "")),
         stars=int(row["stars"]) if "stars" in row and row["stars"] not in ("", None) else None,
@@ -79,7 +82,10 @@ def _next_issue_number() -> int:
 
 
 def _run_source(source, client, history, issue_number, persist: bool = True):
-    raw = client.fetch(source.fetcher.url, headers=source.fetcher.headers).text
+    if source.fetcher.type == "playwright":
+        raw = client.fetch(source.fetcher.url, headers=source.fetcher.headers).text
+    else:
+        raw = client.fetch(source.fetcher.url, headers=source.fetcher.headers).text
     extractor = _build_extractor(source.extractor)
     rows = extractor.extract(raw)
     items = [_row_to_item(r, source) for r in rows[: source.limit.raw]]
@@ -141,10 +147,19 @@ def dry_run(ctx, source):
     src = load_source_config(yaml_path)
     db_path = Path(os.environ.get("SKILLPULSE_CRAWLER_DB", "./data/runs.sqlite"))
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    with History(db_path) as history, create_client() as client:
-        result = _run_source(src, client, history, issue_number=999, persist=False)
-        # dry-run 不调 REST，仅打印本地 pipeline 结果
-        click.echo(f"[dry-run] {src.id}: raw={result['raw']} new={result['new']}")
+    with History(db_path) as history:
+        inner_client = None
+        try:
+            if src.fetcher.type == "playwright":
+                wrapper = PlaywrightHTTP()
+            else:
+                inner_client = httpx.Client(timeout=30, follow_redirects=True)
+                wrapper = SkillPulseHTTP(inner_client)
+            result = _run_source(src, wrapper, history, issue_number=999, persist=False)
+            click.echo(f"[dry-run] {src.id}: raw={result['raw']} new={result['new']}")
+        finally:
+            if inner_client is not None:
+                inner_client.close()
 
 
 @cli.command("run")
@@ -169,16 +184,26 @@ def run_cmd(ctx, only, issue):
     issue_number = issue or _next_issue_number()
 
     summary = {"issue": issue_number, "sources": []}
-    with History(db_path) as history, create_client() as client:
+    with History(db_path) as history:
         run_id = history.start_run(issue_number)
         for source in sources:
+            wrapper = None
+            inner_client = None
             try:
-                r = _run_source(source, client, history, issue_number)
+                if source.fetcher.type == "playwright":
+                    wrapper = PlaywrightHTTP()
+                else:
+                    inner_client = httpx.Client(timeout=30, follow_redirects=True)
+                    wrapper = SkillPulseHTTP(inner_client)
+                r = _run_source(source, wrapper, history, issue_number)
                 summary["sources"].append({"id": source.id, **r})
                 click.echo(f"  {source.id}: raw={r['raw']} new={r['new']} "
-                           f"inserted={r['inserted']} skipped={r['skipped']}")
+                       f"inserted={r['inserted']} skipped={r['skipped']}")
             except Exception as e:
                 summary["sources"].append({"id": source.id, "error": str(e)})
                 click.echo(f"  {source.id}: ERROR {e}", err=True)
+            finally:
+                if inner_client is not None:
+                    inner_client.close()
         history.complete_run(run_id, summary)
         click.echo(f"Run finished: issue={issue_number}, sources={len(sources)}")

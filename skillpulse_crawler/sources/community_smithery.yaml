@@ -1,0 +1,29 @@
+id: community_smithery
+section: community
+display_name: "Smithery Skills Marketplace"
+enabled: true
+interval: weekly
+fetcher:
+  type: api
+  url: https://registry.smithery.ai/skills?pageSize=30
+  headers:
+    Accept: application/json
+  timeout_sec: 30
+extractor:
+  type: jsonpath
+  item_selector: "$.skills[*]"
+  fields:
+    title: "$.displayName"
+    summary: "$.description"
+    url: "$.slug"
+    namespace: "$.namespace"
+    source_id: "$.id"
+    published_date: "$.createdAt"
+mapping:
+  source: "Smithery"
+  source_id:
+    expr: "$.id"
+  url_template: "https://smithery.ai/skill/{namespace}/{url}"
+limit:
+  raw: 30
+  top: 10

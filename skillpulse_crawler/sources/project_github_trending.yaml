@@ -1,7 +1,7 @@
 id: project_github_trending
 section: project
 display_name: "GitHub Trending"
-enabled: true
+enabled: false  # 2026-09-22 禁用：未配置 GITHUB_TOKEN，且被 open_itc 覆盖
 interval: weekly
 fetcher:
   type: api

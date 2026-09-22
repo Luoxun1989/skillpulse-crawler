@@ -33,32 +33,37 @@ python -m skillpulse_crawler run
 | `run --only <id>` | 只跑指定源 |
 | `run --issue <n>` | 指定期号（默认取 max+1） |
 
-## 数据源配置
+## 数据源清单（2026-09-22 实测）
 
-每个 YAML 一个数据源，存放在 `skillpulse_crawler/sources/`：
+**当前 7 个已适配源**：
 
-```yaml
-id: paper_arxiv          # 全局唯一 ID
-section: paper           # news | project | paper | community
-fetcher:
-  type: rss              # rss | http | api
-  url: ...
-  headers: {}
-extractor:
-  type: rss              # rss | xpath | jsonpath | regex
-  fields:
-    summary: rss
-    published_date: rss
-mapping:
-  source: "arXiv"
-  source_id:
-    expr: "fn:arxiv_id_from_url"
-limit:
-  raw: 30                # 拉多少
-  top: 10                # 入库多少
+| ID | Section | 类型 | URL | 备注 |
+|---|---|---|---|---|
+| `news_qnmlgb_daily` | news | http | https://qnmlgb.tech/daily | 微信公众号聚合早报，14 条/期 |
+| `news_aihot_industry` | news | **playwright** | aihot.news/?category=industry | AI 行业聚合，~10 条/期 |
+| `paper_aihot` | paper | **playwright** | aihot.news/?category=paper | 论文聚合（Claude/OpenAI/Dwarkesh 等） |
+| `project_open_itc` | project | http | open.itc.cn/github/trend/repos | GitHub 每日趋势榜，~30 条/期 |
+| `project_aihot_products` | project | **playwright** | aihot.news/?category=ai-products | AI 产品榜 |
+| `community_smithery` | community | api | registry.smithery.ai/skills | Skills 注册中心 API（无反爬） |
+| `community_skillhub` | community | **playwright** | skillhub.cn/skills | 中文 AI Skills 聚合（绕过 CF captcha） |
+
+**反爬绕过方案**：Cloudflare captcha / JS 渲染源（aihot/skillhub）用 `fetcher.type=playwright`，首次 fetch 需 ~3s 等 JS 渲染。
+
+**已知不可达源**（反爬严重，已放弃）：
+- 36kr.com（阿里云 JS 风控）
+- 知乎 project-square（强反爬）
+- discoverhub.cn（需 JS 交互加载）
+- latepost.com（SSL 证书 + 付费墙）
+- jiqizhixin.com（首页为推广页，RSS 实际重定向）
+- github trending / huggingface（Cloudflare captcha）
+
+**环境变量**：
+```bash
+SKILLPULSE_API_BASE=http://localhost:8081  # 后端地址
+SKILLPULSE_ADMIN_JWT=<token>               # POST /api/admin/login 拿
+SKILLPULSE_CRAWLER_DB=./data/runs.sqlite   # 历史 SQLite 路径
+PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright  # 国内镜像加速
 ```
-
-加新源 = 加一个 YAML，不需要改代码。
 
 ## 调度（Windows 计划任务）
 

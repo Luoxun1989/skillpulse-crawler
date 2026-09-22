@@ -45,7 +45,7 @@ class WeeklyDigestItem(BaseModel):
         return self
 
 
-FetcherType = Literal["rss", "http", "api"]
+FetcherType = Literal["rss", "http", "api", "playwright"]
 ExtractorType = Literal["xpath", "jsonpath", "regex", "rss"]
 
 
@@ -71,6 +71,7 @@ class MappingConfig(BaseModel):
     source: str
     source_id: ExtractorField
     published_date: Optional[ExtractorField] = None
+    url_template: Optional[str] = None  # str.format(**row) e.g. "https://x.com/{namespace}/{slug}"
 
 
 class LimitConfig(BaseModel):

@@ -1,0 +1,26 @@
+id: community_skillhub
+section: community
+display_name: "SkillHub AI Skills（中文聚合，需 playwright 绕过 Cloudflare）"
+enabled: true
+interval: weekly
+fetcher:
+  type: playwright
+  url: https://www.skillhub.cn/skills?sortBy=trending
+  headers:
+    Accept-Language: zh-CN,zh;q=0.9
+  timeout_sec: 60
+extractor:
+  type: xpath
+  item_selector: "//a[contains(@href,'/skills/') and contains(@href,'/') and string-length(substring-after(substring-after(@href,'/skills/'),'/'))>2]"
+  fields:
+    title: "./text()"
+    url: "./@href"
+    source_id: "./@href"
+mapping:
+  source: "SkillHub"
+  source_id:
+    expr: "./@href"
+  url_template: "https://www.skillhub.cn{url}"
+limit:
+  raw: 30
+  top: 10
