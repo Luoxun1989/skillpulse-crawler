@@ -25,5 +25,4 @@ mapping:
     expr: "$.id"
   url_template: "https://smithery.ai/skill/{namespace}/{url}"
 limit:
-  raw: 30
-  top: 10
+  raw: 500

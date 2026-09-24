@@ -11,17 +11,16 @@ fetcher:
   timeout_sec: 45
 extractor:
   type: xpath
-  item_selector: "//article"
+  item_selector: "//article[.//a[contains(@href,'/items/')]]"
   fields:
-    title: ".//a[1]/text() | .//h2/text() | .//h3/text()"
-    url: ".//a[1]/@href"
+    title: ".//span[contains(@class,'uc-x-title')]/text() | .//h2/text() | .//h3/text() | .//a[1]/text()"
+    url: ".//a[contains(@href,'/items/')]/@href"
     summary: ".//p/text()"
-    source_id: ".//a[1]/@href"
+    source_id: ".//a[contains(@href,'/items/')]/@data-item-id | .//@data-item-id"
 mapping:
   source: "AIHOT"
   source_id:
-    expr: ".//a[1]/@href"
+    expr: ".//@data-item-id"
   url_template: "https://aihot.news{url}"
 limit:
-  raw: 30
-  top: 10
+  raw: 500

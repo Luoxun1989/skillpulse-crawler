@@ -17,5 +17,4 @@ mapping:
   source_id:
     expr: "fn:arxiv_id_from_url"
 limit:
-  raw: 30
-  top: 10
+  raw: 500

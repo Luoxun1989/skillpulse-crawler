@@ -11,10 +11,12 @@ fetcher:
   timeout_sec: 30
 extractor:
   type: xpath
-  item_selector: "//div[contains(@class,'ae') and .//a]"
+  # qnmlgb.tech 是扁平 div 列表，没 href/data-id 的容器是装饰壳。只匹配"含 <a> 且 data-id 存在"的 row
+  # 双重限定防嵌套容器被多次命中（XPathExtractor 会对每个祖先 div 都创建一条）
+  item_selector: "//div[contains(@class,'ae') and ./a and @data-id and .//span[contains(@class,'pretty_v2')]]"
   fields:
     title: ".//span[contains(@class,'pretty_v2')]/text()"
-    url: ".//a/@href"
+    url: "./a/@href"
     summary: ".//span[contains(@class,'pretty_v2')]/text()"
     source_id: "./@data-id"
 mapping:
@@ -22,5 +24,4 @@ mapping:
   source_id:
     expr: "./@data-id"
 limit:
-  raw: 30
-  top: 14
+  raw: 500

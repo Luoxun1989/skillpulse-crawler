@@ -1,0 +1,20 @@
+id: news_36kr_rss
+section: news
+display_name: "36 氪综合（RSS）"
+enabled: true
+interval: weekly
+fetcher:
+  type: rss
+  url: https://www.36kr.com/feed
+  timeout_sec: 30
+extractor:
+  type: rss
+  fields:
+    published_date: rfc2822
+    summary: ""
+mapping:
+  source: "36氪"
+  source_id:
+    expr: "./link"
+limit:
+  raw: 500

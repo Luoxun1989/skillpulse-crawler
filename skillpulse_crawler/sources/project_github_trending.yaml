@@ -21,5 +21,4 @@ mapping:
   source_id:
     expr: "$.full_name"
 limit:
-  raw: 30
-  top: 10
+  raw: 500

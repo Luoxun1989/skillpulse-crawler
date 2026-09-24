@@ -1,0 +1,28 @@
+id: news_jiqizhixin
+section: news
+display_name: "机器之心 Jiqizhixin"
+enabled: true
+interval: weekly
+fetcher:
+  type: api
+  url: https://www.jiqizhixin.com/api/article_library/articles.json?page=1&per=20
+  headers:
+    Accept: application/json
+  timeout_sec: 30
+extractor:
+  type: jsonpath
+  item_selector: "$.articles[*]"
+  fields:
+    title: "$.title"
+    url: "$.slug"
+    source_id: "$.id"
+    published_date: "$.publishedAt"
+    summary: "$.content"
+    author: "$.author"
+mapping:
+  source: "机器之心"
+  source_id:
+    expr: "$.id"
+  url_template: "https://www.jiqizhixin.com/articles/{url}"
+limit:
+  raw: 500

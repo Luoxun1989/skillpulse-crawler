@@ -20,5 +20,4 @@ mapping:
   source_id:
     expr: "$.objectID"
 limit:
-  raw: 30
-  top: 10
+  raw: 500

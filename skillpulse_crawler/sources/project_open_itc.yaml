@@ -21,5 +21,4 @@ mapping:
   source_id:
     expr: ".//a[contains(@href,'github.com/')]/text()"
 limit:
-  raw: 30
-  top: 10
+  raw: 500

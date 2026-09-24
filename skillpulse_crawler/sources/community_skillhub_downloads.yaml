@@ -1,0 +1,31 @@
+id: community_skillhub_downloads
+section: community
+display_name: "SkillHub 下载量榜 Top 1000（API 抓取 10 页）"
+enabled: true
+interval: weekly
+fetcher:
+  type: api
+  url: https://api.skillhub.cn/api/skills?page={page}&pageSize={page_size}&sortBy=downloads&order=desc
+  headers:
+    Accept: application/json
+  timeout_sec: 30
+  pages: 10
+  page_size: 100
+extractor:
+  type: jsonpath
+  item_selector: "$.data.skills[*]"
+  fields:
+    title: "$.name"
+    url: "$.homepage"
+    url_path: "$.namespace.canonicalName"
+    summary: "$.description_zh"
+    likes_count: "$.downloads"
+    stars: "$.stars"
+    source_id: "$.slug"
+mapping:
+  source: "SkillHub"
+  source_id:
+    expr: "$.slug"
+  url_template: "https://www.skillhub.cn/skills/{url_path}"
+limit:
+  raw: 1000

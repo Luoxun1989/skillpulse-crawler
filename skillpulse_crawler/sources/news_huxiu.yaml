@@ -1,0 +1,20 @@
+id: news_huxiu
+section: news
+display_name: "虎嗅网（RSS）"
+enabled: true
+interval: weekly
+fetcher:
+  type: rss
+  url: https://rss.huxiu.com/
+  timeout_sec: 30
+extractor:
+  type: rss
+  fields:
+    published_date: rfc2822
+    summary: ""
+mapping:
+  source: "虎嗅"
+  source_id:
+    expr: "./link"
+limit:
+  raw: 500
