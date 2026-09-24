@@ -11,6 +11,7 @@
 import os
 import sys
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -59,15 +60,40 @@ def fetch_all(token: str, section: str) -> list:
     return items
 
 
+def _to_mysql_datetime(v) -> str | None:
+    """ISO8601 datetime str → MySQL DATETIME 字符串。
+
+    API 返回形如 '2026-09-24T01:15:00.000+00:00'，MySQL DATETIME 列只接
+    'YYYY-MM-DD HH:MM:SS'。截断到秒、丢弃时区后缀。
+    if 无法解析，返回原 str（视为普通文本，由外层 esc 加引号）。
+    """
+    if not isinstance(v, str):
+        return None
+    # 至少得有 'T' 才能识别为 datetime
+    if "T" not in v:
+        return None
+    # 切到秒：2026-09-24T01:15:00.000+00:00 → 2026-09-24 01:15:00
+    m = re.match(r"^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})", v)
+    if not m:
+        return None
+    return f"{m.group(1)} {m.group(2)}"
+
+
 def esc(v) -> str:
-    """SQL 字符串转义：None→NULL；str→加单引号+转义单引号/反斜杠。"""
+    """SQL 字符串转义：None→NULL；str→加单引号+转义单引号/反斜杠/NUL。
+
+    - ISO8601 datetime 自动转 MySQL DATETIME 格式
+    - mysql 客户端默认禁用 binary-mode，遇到 NUL 字节整段 SQL 拒绝执行
+    """
     if v is None:
         return "NULL"
     if isinstance(v, (int, float)):
         return str(v)
     if isinstance(v, bool):
         return "1" if v else "0"
-    s = str(v).replace("\\", "\\\\").replace("'", "\\'")
+    dt = _to_mysql_datetime(v)
+    s = dt if dt is not None else str(v)
+    s = s.replace("\\", "\\\\").replace("'", "\\'").replace("\x00", " ")
     return f"'{s}'"
 
 
