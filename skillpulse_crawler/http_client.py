@@ -14,7 +14,12 @@ class SkillPulseHTTP:
         stop=stop_after_attempt(3),
         reraise=True,
     )
-    def fetch(self, url: str, headers: dict | None = None, timeout: int = 30) -> httpx.Response:
+    def fetch(self, url: str, headers: dict | None = None, timeout: int = 30, verify_ssl: bool = True) -> httpx.Response:
+        # verify_ssl=False 用于绕过证书问题（如 latepost.com）
+        if not verify_ssl:
+            # 重建 client（httpx 不支持单请求 verify 切换）
+            self.client.close()
+            self.client = httpx.Client(timeout=timeout, follow_redirects=True, verify=False)
         kwargs = {"timeout": timeout}
         if headers:
             kwargs["headers"] = headers

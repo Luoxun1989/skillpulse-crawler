@@ -10,3 +10,10 @@ runs/
 data/*.sqlite
 data/*.sqlite-journal
 .env
+state.db
+*.db
+summary.json
+skill.json
+# 探索性产物（latepost / jiqizhixin 临时分析，不属于生产代码）
+skillpulse_crawler/feasibility_latepost.py
+skillpulse_crawler/html_latepost/

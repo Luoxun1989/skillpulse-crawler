@@ -41,8 +41,15 @@ def normalize_date(value: str, parser: str = "iso8601") -> str | None:
             dt = parsedate_to_datetime(value)
             return dt.strftime("%Y-%m-%d")
         if parser == "iso8601":
-            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            return dt.strftime("%Y-%m-%d")
+            # try a few common forms before strict ISO8601
+            for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
+                        "%Y-%m-%d", "%Y/%m/%d %H:%M", "%Y/%m/%d"):
+                try:
+                    dt = datetime.strptime(value.replace("Z", "+0000") if fmt.endswith("%z") else value, fmt)
+                    return dt.strftime("%Y-%m-%d")
+                except ValueError:
+                    continue
+            return None
         if parser == "mysql":
             return value[:10]
         if parser == "rss":

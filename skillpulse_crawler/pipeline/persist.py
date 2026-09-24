@@ -7,9 +7,9 @@ from typing import Iterable
 import httpx
 
 from ..models import WeeklyDigestItem
+from ..auth import auth_headers
 
 API_BASE = os.environ.get("SKILLPULSE_API_BASE", "http://localhost:8081")
-ADMIN_JWT = os.environ.get("SKILLPULSE_ADMIN_JWT", "")
 
 
 def _generate_batch_id() -> str:
@@ -32,7 +32,7 @@ def persist_batch(items: Iterable[WeeklyDigestItem], issue_number: int) -> dict:
     """
     materialised = list(items)
     if not materialised:
-        return {"inserted": 0, "skipped_duplicate": 0, "errors": []}
+        return {"inserted": 0, "skippedDuplicate": 0, "errors": []}
 
     batch_id = _generate_batch_id()
     fetched_at = datetime.utcnow()
@@ -42,10 +42,7 @@ def persist_batch(items: Iterable[WeeklyDigestItem], issue_number: int) -> dict:
     for item in materialised:
         grouped[item.section].append(item)
 
-    headers = {
-        "Authorization": f"Bearer {ADMIN_JWT}",
-        "Content-Type": "application/json",
-    }
+    headers = auth_headers()
 
     total_inserted = 0
     total_skipped = 0
@@ -76,7 +73,7 @@ def persist_batch(items: Iterable[WeeklyDigestItem], issue_number: int) -> dict:
 
     return {
         "inserted": total_inserted,
-        "skipped_duplicate": total_skipped,
+        "skippedDuplicate": total_skipped,
         "errors": all_errors,
         "batch_id": batch_id,
     }

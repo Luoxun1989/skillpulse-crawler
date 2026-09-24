@@ -54,6 +54,10 @@ class FetcherConfig(BaseModel):
     url: str
     headers: dict[str, str] = Field(default_factory=dict)
     timeout_sec: int = 20
+    verify_ssl: bool = True  # False 绕过证书问题（如 latepost）
+    # 多页抓取：url 含 {page}，cli 从 page=1 循环到 pages（None=不循环）
+    pages: Optional[int] = None
+    page_size: Optional[int] = None  # 附加 &pageSize={page_size}
 
 
 class ExtractorField(BaseModel):
@@ -75,8 +79,8 @@ class MappingConfig(BaseModel):
 
 
 class LimitConfig(BaseModel):
-    raw: int = 30
-    top: int = 10
+    raw: int = 500
+    top: int = 0  # 0 = 不截断（推荐：每日全量入库）
 
 
 class RankConfig(BaseModel):
