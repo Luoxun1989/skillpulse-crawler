@@ -161,20 +161,32 @@ def main():
 
 
 def _sql_header() -> str:
-    """SQL 文件头部：DDL + SET。DDL 来源 mysql/migrations/V20260921__create_section_tables.sql。"""
+    """SQL 文件头部：DDL + SET。DDL 来源 mysql/migrations/V20260921__create_section_tables.sql。
+
+    顺序：先 DROP 已有表（清掉任何脏数据），再 CREATE IF NOT EXISTS，再 INSERT。
+    服务器导入时会清空 4 表，再写入 2108 条干净数据。
+    注意：DROP 会丢表上所有已有数据，包括爬虫新采集的（如果有）。
+    """
     from datetime import datetime
     return (
         "-- SkillPulse 4 表全量初始数据\n"
         f"-- 生成时间：{datetime.now().isoformat()}\n"
         "-- 用法：mysql -u root -p skillpulse < init_full_data.sql\n"
-        "-- 服务器空库时此文件自带 DDL + 数据，一次执行即可。\n"
-        "-- 已存在表则 DDL 跳过（CREATE TABLE IF NOT EXISTS），INSERT 仍执行。\n"
+        "-- ⚠️ 此脚本会 DROP 4 张表后重建，所有表上已有数据会丢失\n"
+        "-- 服务器首次/重新导入用；不要在已有爬虫新数据的库上跑\n"
         "SET NAMES utf8mb4;\n"
         "SET FOREIGN_KEY_CHECKS = 0;\n\n"
         "-- ============================================================\n"
+        "-- 先清掉旧表（DROP IF EXISTS 幂等；解决脏数据/test 数据混入）\n"
+        "-- ============================================================\n"
+        "DROP TABLE IF EXISTS news_item;\n"
+        "DROP TABLE IF EXISTS paper_item;\n"
+        "DROP TABLE IF EXISTS project_item;\n"
+        "DROP TABLE IF EXISTS community_item;\n\n"
+        "-- ============================================================\n"
         "-- 4 表 DDL（来源 V20260921__create_section_tables.sql）\n"
         "-- ============================================================\n"
-        "CREATE TABLE IF NOT EXISTS news_item (\n"
+        "CREATE TABLE news_item (\n"
         "    id              VARCHAR(32)     NOT NULL,\n"
         "    title           VARCHAR(512)    NOT NULL,\n"
         "    summary         TEXT            NULL,\n"
@@ -203,11 +215,11 @@ def _sql_header() -> str:
         "    KEY idx_published_date (published_date),\n"
         "    KEY idx_fetch_status (fetch_status, fetched_at)\n"
         ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 行业动态';\n"
-        "CREATE TABLE IF NOT EXISTS paper_item LIKE news_item;\n"
+        "CREATE TABLE paper_item LIKE news_item;\n"
         "ALTER TABLE paper_item COMMENT='本周精选论文';\n"
-        "CREATE TABLE IF NOT EXISTS project_item LIKE news_item;\n"
+        "CREATE TABLE project_item LIKE news_item;\n"
         "ALTER TABLE project_item COMMENT='本周热门项目';\n"
-        "CREATE TABLE IF NOT EXISTS community_item LIKE news_item;\n"
+        "CREATE TABLE community_item LIKE news_item;\n"
         "ALTER TABLE community_item COMMENT='社区声音·一周热议';\n\n"
         "-- ============================================================\n"
         "-- 数据导入\n"
