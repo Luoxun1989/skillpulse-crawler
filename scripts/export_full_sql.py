@@ -60,6 +60,26 @@ def fetch_all(token: str, section: str) -> list:
     return items
 
 
+# dev 调试时人工塞的占位条目（title 是这些字串或 url 是 http://x.com/* 的一律丢弃，
+# 避免服务器 init_full_data.sql 再次被污染）。title 为空也丢（爬虫未抓到 title 的不入正式数据）。
+_PLACEHOLDER_TITLES = {
+    "", "ok", "test",
+    "t", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9",
+    "test 0", "test 1", "test 0",
+    "test0", "test1", "test2", "test3", "test4", "test5", "test6",
+}
+_PLACEHOLDER_URL_PREFIXES = ("http://x.com",)
+
+
+def _is_dirty(item: dict) -> bool:
+    """判断是否是 dev 调试占位条目（title 空/占位字串 或 url 是 x.com placeholder）。"""
+    title = (item.get("title") or "").strip()
+    if title in _PLACEHOLDER_TITLES:
+        return True
+    url = item.get("url") or ""
+    return any(url.startswith(p) for p in _PLACEHOLDER_URL_PREFIXES)
+
+
 def _to_mysql_datetime(v) -> str | None:
     """ISO8601 datetime str → MySQL DATETIME 字符串。
 
@@ -139,6 +159,12 @@ def main():
         f.write(_sql_header())
         for sec in SECTIONS:
             items = fetch_all(token, sec)
+            # 过滤 dev 期间塞的占位条目 + 空 title 的脏数据
+            before = len(items)
+            items = [it for it in items if not _is_dirty(it)]
+            skipped = before - len(items)
+            if skipped:
+                print(f"  [{sec}] skipped {skipped} dirty rows (placeholder / empty title)")
             f.write(f"-- ====== {TABLE[sec]} ({len(items)} rows) ======\n")
             if not items:
                 f.write("-- (no rows)\n\n")
