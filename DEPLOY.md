@@ -96,7 +96,7 @@ chmod 600 .env
 # 后端 API 基址（与后端 jar 启动时同一台机器）
 API_BASE=http://127.0.0.1:8081
 
-# 后端 admin 登录用户名/密码（与后端 application-prod.yml 一致）
+# 后端 admin 登录用户名/密码（密码匹配后端 DB `admin_users` 表里 admin 账号的 password）
 ADMIN_USER=admin
 ADMIN_PASS={{ADMIN_PASSWORD}}
 
@@ -106,11 +106,12 @@ SKILLPULSE_CRAWLER_DB=/data/skillpulse-crawler/data/runs.sqlite
 
 > **关于 `ADMIN_PASS` 与后端 `JWT_SECRET` 的关系**（很多文档混用，搞清楚）：
 > - `ADMIN_PASS` 是**登录密码**——爬虫用 `ADMIN_USER` + `ADMIN_PASS` 调 `/api/admin/login` 换 token
-> - `JWT_SECRET` 是**签名密钥**（64 字节字符串，存在后端 `application-prod.yml` 或 `.env.production`）——后端用此密钥签发/验证 token
+> - `JWT_SECRET` 是**签名密钥**（64 字节字符串）——后端用此密钥签发/验证 token，**绝不外泄**
+> - 服务器部署时 `JWT_SECRET` 通过**环境变量**（`export JWT_SECRET=...`）注入；`application-prod.yml` 里写成 `${JWT_SECRET:...}`，Spring Boot 启动时从环境变量读
 > - 爬虫**不需要**、也**不应该**知道 `JWT_SECRET`（签名密钥绝不能外泄到爬虫）
-> - 服务器运维：`JWT_SECRET` 在后端启动时由 `application-prod.yml` 读取，爬虫只跟 `ADMIN_USER` / `ADMIN_PASS` 打交道
+> - 服务器运维：`ADMIN_PASS` 写在爬虫的 `.env`；`JWT_SECRET` 写在后端启动脚本的环境变量里；两边文件互不知道对方存在
 
-`ADMIN_PASS` 必须替换为后端 `application-prod.yml` 中定义的 admin 密码（**不要使用 dev 默认 admin/admin123**）。
+`ADMIN_PASS` 必须替换为后端 admin 账号真实密码（**不要使用 dev 默认 admin/admin123**）。
 
 ---
 
@@ -284,7 +285,7 @@ ADMIN_PASS={{ADMIN_PASSWORD}} \
 
 ### 9.1 401 Unauthorized
 
-`ADMIN_PASS` 与后端 `application-prod.yml` 中 admin 密码不一致。重新生成 JWT 不需要改密码——直接改 `.env` 即可。
+`ADMIN_PASS` 与后端 DB `admin_users` 表里 admin 账号的密码不一致。重新登录不需要改密码——直接改爬虫 `.env` 里的 `ADMIN_PASS` 即可。
 
 ### 9.2 source_id 超长入库 500
 
