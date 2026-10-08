@@ -137,7 +137,7 @@ python3 -m skillpulse_crawler dry-run --source news_huxiu
 手动跑一次验证后端连通（**这一步会自动完成登录，不需要额外步骤**）：
 ```bash
 ADMIN_PASS={{ADMIN_PASSWORD}} \
-  python3 -m skillpulse_crawler run --source news_huxiu
+  python3 -m skillpulse_crawler run --only news_huxiu
 ```
 
 期望：
