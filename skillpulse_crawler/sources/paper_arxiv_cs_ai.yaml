@@ -1,7 +1,7 @@
 id: paper_arxiv_cs_ai
 section: paper
 display_name: "arXiv cs.AI 每日新论文"
-enabled: true
+enabled: false  # 2026-10-08 禁用：服务器环境 DNS 无法解析 export.arxiv.org，跟 paper_arxiv.yaml 同样问题
 interval: weekly
 fetcher:
   type: rss

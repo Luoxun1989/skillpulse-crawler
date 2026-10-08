@@ -319,6 +319,33 @@ cat > /etc/logrotate.d/skillpulse-crawler <<'EOF'
 EOF
 ```
 
+### 9.5 `No module named 'playwright'`（4 个源失败）
+
+部分源（`community_skillhub` / `news_aihot_industry` / `paper_aihot` / `project_aihot_products`）用 Playwright 反爬，服务器没装。
+
+服务器上装：
+```bash
+pip3 install --user playwright
+~/.local/bin/playwright install chromium
+```
+
+可选依赖占 300MB Chromium。不想装就把这 4 个源的 `enabled: false` 禁用。
+
+### 9.6 `Temporary failure in name resolution`（arxiv）
+
+`paper_arxiv_cs_ai`（已默认禁用）跟老的 `paper_arxiv`（已默认禁用）都拉 `export.arxiv.org`，服务器网络层无法解析。
+
+**已禁用**——需要 arxiv 数据时换 mirror（如 `arxiv.org/abs/...` RSS 备选）或公司代理。
+
+### 9.7 `raw=N new=0`（看似没采到）
+
+正常情况：本地 dev 之前跑过，history（`data/runs.sqlite`）里这些 source_id 标 seen 了，过滤掉。`raw=N` 是抓到的总数，`new=0` 是去重后新增的。
+
+服务器首次部署建议先清空 history 强制全量：
+```bash
+rm /data/skillpulse-crawler/data/runs.sqlite
+```
+
 ---
 
 ## 十、与后端/前端部署的关系
