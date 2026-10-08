@@ -104,6 +104,12 @@ ADMIN_PASS={{ADMIN_PASSWORD}}
 SKILLPULSE_CRAWLER_DB=/data/skillpulse-crawler/data/runs.sqlite
 ```
 
+> **关于 `ADMIN_PASS` 与后端 `JWT_SECRET` 的关系**（很多文档混用，搞清楚）：
+> - `ADMIN_PASS` 是**登录密码**——爬虫用 `ADMIN_USER` + `ADMIN_PASS` 调 `/api/admin/login` 换 token
+> - `JWT_SECRET` 是**签名密钥**（64 字节字符串，存在后端 `application-prod.yml` 或 `.env.production`）——后端用此密钥签发/验证 token
+> - 爬虫**不需要**、也**不应该**知道 `JWT_SECRET`（签名密钥绝不能外泄到爬虫）
+> - 服务器运维：`JWT_SECRET` 在后端启动时由 `application-prod.yml` 读取，爬虫只跟 `ADMIN_USER` / `ADMIN_PASS` 打交道
+
 `ADMIN_PASS` 必须替换为后端 `application-prod.yml` 中定义的 admin 密码（**不要使用 dev 默认 admin/admin123**）。
 
 ---
@@ -119,9 +125,15 @@ python3 -m skillpulse_crawler dry-run --source news_huxiu
 
 期望：打印 `[dry-run] news_huxiu: raw=N new=M`（数字非零），无 traceback。
 
-### 2. 申请 admin JWT（cron 启动时自动续）
+### 2. 首次调用后端时会自动登录（无需手动申请 JWT）
 
-手动跑一次验证后端连通：
+爬虫**不需要**预先生成或保存 JWT 字符串。`skillpulse_crawler/auth.py` 的 `get_admin_jwt()` 在第一次需要调后端时：
+
+1. 检查环境变量 `SKILLPULSE_ADMIN_JWT`，有则直接用（调试/预取场景）
+2. 否则用 `ADMIN_USER` + `ADMIN_PASS` 调后端 `POST /api/admin/login` 换 JWT
+3. `@lru_cache(maxsize=1)` 缓存 24h，进程内复用同一 token
+
+手动跑一次验证后端连通（**这一步会自动完成登录，不需要额外步骤**）：
 ```bash
 ADMIN_PASS={{ADMIN_PASSWORD}} \
   python3 -m skillpulse_crawler run --source news_huxiu
