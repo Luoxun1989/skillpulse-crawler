@@ -10,9 +10,11 @@
 | 项目 | 要求 |
 |------|------|
 | OS | Linux (Ubuntu 20.04+ / CentOS 7+) 或 Windows Server |
-| Python | 3.11+（与本机对齐，参考 [memory skillpulse-chestnut-stack](memory/skillpulse-chestnut-stack.md)） |
+| Python | **3.10+**（已实测兼容 3.10.12；用 3.10+ 即可） |
 | 网络 | 可访问后端 API、可访问各 source YAML 中的目标站 |
 | 后端 | 已部署并运行（参见 `DEPLOY.md`） |
+
+> **不使用虚拟环境**——依赖装到用户级 `~/.local/lib/python3.10/site-packages`，由 `~/.local/bin` 路径自动加载。`python3` 调系统 Python 即可。
 
 ---
 
@@ -31,9 +33,14 @@
 │   └── init_full_data.sql
 ├── logs/                      # 运行日志（cron 输出重定向到这里）
 ├── data/                      # SQLite state.db（全局去重）
-├── .venv/                     # Python 虚拟环境
 ├── .env                       # 环境变量（见第三节）
 └── run.sh                     # 单次跑（cron 调用）
+```
+
+依赖装到用户级（不用虚拟环境）：
+```
+~/.local/lib/python3.10/site-packages/httpx/...
+~/.local/lib/python3.10/site-packages/pydantic/...
 ```
 
 ---
@@ -43,13 +50,14 @@
 ### 1. 安装 Python 与依赖
 
 ```bash
-# Ubuntu
-apt-get install -y python3.11 python3.11-venv
+# Ubuntu 24.04+ 默认 PEP 668 阻止 pip 装到系统包目录，必须加 --break-system-packages 或 --user
+# 这里用 --user 装到 ~/.local，不需 sudo、不污染系统包
 
-# 创建虚拟环境
-cd /data/skillpulse-crawler
-python3.11 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+# 1. 装 pip（如果没装）
+apt-get install -y python3-pip
+
+# 2. 用户级安装依赖
+pip3 install --user -r requirements.txt
 ```
 
 `requirements.txt` 至少包含：
@@ -65,9 +73,13 @@ python-dotenv
 pyyaml
 ```
 
+> **重要**：`--user` 装的包在 `~/.local/lib/python3.10/site-packages/`，可执行脚本在 `~/.local/bin/`。
+> `python3` 默认会自动加载 `~/.local` 的 site-packages（PEP 370）。
+> 如果 cron 跑的时候找不到包，需要在 `run.sh` 显式 export `PYTHONUSERBASE=$HOME/.local`。
+
 Playwright（仅 `latepost` 等反爬源需要，可选）：
 ```bash
-.venv/bin/playwright install chromium
+~/.local/bin/playwright install chromium
 ```
 
 ### 2. .env 文件
@@ -102,7 +114,7 @@ SKILLPULSE_CRAWLER_DB=/data/skillpulse-crawler/data/runs.sqlite
 
 ```bash
 cd /data/skillpulse-crawler
-.venv/bin/python -m skillpulse_crawler dry-run --source news_huxiu
+python3 -m skillpulse_crawler dry-run --source news_huxiu
 ```
 
 期望：打印 `[dry-run] news_huxiu: raw=N new=M`（数字非零），无 traceback。
@@ -112,7 +124,7 @@ cd /data/skillpulse-crawler
 手动跑一次验证后端连通：
 ```bash
 ADMIN_PASS={{ADMIN_PASSWORD}} \
-  .venv/bin/python -m skillpulse_crawler run --source news_huxiu
+  python3 -m skillpulse_crawler run --source news_huxiu
 ```
 
 期望：
@@ -124,7 +136,7 @@ ADMIN_PASS={{ADMIN_PASSWORD}} \
 
 ```bash
 ADMIN_PASS={{ADMIN_PASSWORD}} \
-  .venv/bin/python -m skillpulse_crawler run
+  python3 -m skillpulse_crawler run
 ```
 
 期望：所有 enabled source 跑一遍，history 已见 source_id 自动 skip。
@@ -145,13 +157,17 @@ set -e
 
 cd /data/skillpulse-crawler
 
+# 显式声明用户级 site-packages（cron 环境可能不自动加载 ~/.local）
+export PYTHONUSERBASE="$HOME/.local"
+export PATH="$PYTHONUSERBASE/bin:$PATH"
+
 # 加载 .env
 set -a
 source .env
 set +a
 
 LOG=/data/skillpulse-crawler/logs/cron-$(date +%Y%m%d_%H%M).log
-.venv/bin/python -X utf8 -m skillpulse_crawler run >> "$LOG" 2>&1
+python3 -X utf8 -m skillpulse_crawler run >> "$LOG" 2>&1
 
 # 健康检查：连续失败告警（可选）
 RC=$?
@@ -204,9 +220,10 @@ schtasks /Create ^
 ```bat
 @echo off
 cd /d D:\skillpulse-crawler
-call .venv\Scripts\activate.bat
+set PYTHONUSERBASE=%USERPROFILE%\AppData\Roaming\Python
+set PATH=%PYTHONUSERBASE%\Scripts;%PATH%
 set ADMIN_PASS={{ADMIN_PASSWORD}}
-.venv\Scripts\python.exe -X utf8 -m skillpulse_crawler run >> logs\cron-%date:~0,4%%date:~5,2%%date:~8,2%.log 2>&1
+python.exe -X utf8 -m skillpulse_crawler run >> logs\cron-%date:~0,4%%date:~5,2%%date:~8,2%.log 2>&1
 ```
 
 ---
@@ -231,7 +248,7 @@ mysql -u root -p skillpulse < sql/init_full_data.sql
 
 ```bash
 ADMIN_PASS={{ADMIN_PASSWORD}} \
-  .venv/bin/python scripts/replay_all.py
+  python3 scripts/replay_all.py
 ```
 
 脚本对每个 enabled source 全量拉一次，绕过 history 客户端 dedupe，依赖后端 service 层 `(source, source_id)` 唯一索引兜底。

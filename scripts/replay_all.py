@@ -7,9 +7,9 @@
 - 入库到今天的 issue（YYYYMMDD 数字）
 
 用法：
-    ADMIN_PASS=xxx .venv/Scripts/python -m scripts.replay_all
+    ADMIN_PASS=xxx python3 -m scripts.replay_all
     # 或直接预取 JWT
-    SKILLPULSE_ADMIN_JWT=xxx .venv/Scripts/python -m scripts.replay_all
+    SKILLPULSE_ADMIN_JWT=xxx python3 -m scripts.replay_all
 """
 import os
 import sys

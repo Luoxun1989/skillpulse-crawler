@@ -5,7 +5,7 @@
 
 用法：
     API_BASE=http://localhost:8081 ADMIN_USER=admin ADMIN_PASS=xxx \
-      .venv/Scripts/python -X utf8 -m scripts.export_full_sql
+      python3 -X utf8 -m scripts.export_full_sql
 产出：sql/init_full_data.sql
 """
 import os
